@@ -1,9 +1,11 @@
 package com.mentalhealth.app.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 
 @Entity
 @Table(name = "therapy_info")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class TherapyInfo {
 
     @Id
@@ -13,6 +15,7 @@ public class TherapyInfo {
     @OneToOne(fetch = FetchType.LAZY)
     @MapsId
     @JoinColumn(name = "employee_id")
+    @JsonIgnoreProperties("therapyInfo")
     private Employee employee;
 
     @Column(name = "therapy_access", nullable = false)

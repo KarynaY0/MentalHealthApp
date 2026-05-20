@@ -1,9 +1,8 @@
-version: '3.8'
-
 services:
   postgres:
     image: postgres:17
     container_name: shared_postgres
+    command: postgres -c timezone=UTC
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres

@@ -1,9 +1,11 @@
 package com.mentalhealth.app.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 
 @Entity
 @Table(name = "work_mode")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class WorkMode {
 
     @Id

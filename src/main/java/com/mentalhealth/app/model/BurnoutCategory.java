@@ -1,10 +1,12 @@
 package com.mentalhealth.app.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 
 @Entity
 @Table(name = "burnout_category")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class BurnoutCategory {
 
     @Id
