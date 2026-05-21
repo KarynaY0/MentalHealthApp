@@ -3,12 +3,11 @@ package com.mentalhealth.app.controller;
 import com.mentalhealth.app.model.*;
 import com.mentalhealth.app.repository.*;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@Controller
+@RestController
 @RequestMapping("/api/lookup")
 @CrossOrigin(origins = "*")
 @RequiredArgsConstructor
