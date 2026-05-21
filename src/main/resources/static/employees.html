@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <title>Employees — MindMetrics</title>
+    <link rel="stylesheet" href="css/style.css"/>
+</head>
+<body>
+
+<div class="main">
+    <header class="topbar">
+        <span class="topbar-title">Employees</span>
+        <span class="topbar-sub" id="topbar-count">Loading…</span>
+        <button class="btn btn-primary btn-sm" id="btn-add">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+                <path d="M8 2v12M2 8h12" stroke-linecap="round"/>
+            </svg>
+            Add Employee
+        </button>
+    </header>
+
+    <div class="page">
+
+        <!-- Filter bar -->
+        <div class="filter-card" id="filter-bar">
+            <span class="filter-label">Filter</span>
+
+            <select class="form-control" id="f-country">
+                <option value="">All Countries</option>
+            </select>
+            <select class="form-control" id="f-industry">
+                <option value="">All Industries</option>
+            </select>
+            <select class="form-control" id="f-job-role">
+                <option value="">All Job Roles</option>
+            </select>
+            <select class="form-control" id="f-work-mode">
+                <option value="">All Work Modes</option>
+            </select>
+            <select class="form-control" id="f-gender">
+                <option value="">All Genders</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Non-binary">Non-binary</option>
+            </select>
+
+            <div class="filter-divider"></div>
+            <button class="btn btn-ghost btn-sm" id="btn-reset">✕ Reset</button>
+        </div>
+
+        <!-- Table card -->
+        <div class="card" style="padding:0;overflow:hidden">
+            <div class="table-wrap" id="table-wrap" style="border:none;border-radius:0">
+                <table id="emp-table">
+                    <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Age</th>
+                        <th>Gender</th>
+                        <th>Country</th>
+                        <th>Industry</th>
+                        <th>Job Role</th>
+                        <th>Seniority</th>
+                        <th>Work Mode</th>
+                        <th class="num">Salary (USD)</th>
+                        <th class="num">Yrs Exp.</th>
+                        <th style="text-align:center">Burnout</th>
+                        <th style="width:88px"></th>
+                    </tr>
+                    </thead>
+                    <tbody id="emp-tbody">
+                    <tr class="no-click">
+                        <td colspan="12">
+                            <div class="empty-state"><div class="spinner" style="margin:0 auto"></div></div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <div style="padding:14px 20px;border-top:1px solid var(--border)">
+                <div class="pagination" id="pagination">
+                    <span class="pagination-info" id="page-info"></span>
+                    <div class="pagination-btns" id="pag-btns"></div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ── Add / Edit Modal ──────────────────────────────── -->
+<div class="modal-backdrop" id="modal-form">
+    <div class="modal" style="max-width:900px">
+        <div class="modal-header">
+            <div class="modal-title" id="modal-form-title">Add Employee</div>
+            <button class="modal-close" id="modal-form-close">✕</button>
+        </div>
+        <div class="modal-body">
+
+            <div class="form-section">
+                <div class="form-section-title">Demographics &amp; Employment</div>
+                <div class="form-row">
+                    <div class="form-group" id="f-empid-group">
+                        <label class="form-label">Employee ID <span>*</span></label>
+                        <input class="form-control" type="number" id="f-emp-id" placeholder="e.g. 100050" min="1"/>
+                        <span class="form-hint">Must be unique</span>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Age <span>*</span></label>
+                        <input class="form-control" type="number" id="f-age" min="18" max="70" placeholder="e.g. 32"/>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Gender <span>*</span></label>
+                        <select class="form-control" id="f-form-gender">
+                            <option value="">Select…</option>
+                            <option>Male</option>
+                            <option>Female</option>
+                            <option>Non-binary</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Country <span>*</span></label>
+                        <select class="form-control" id="f-form-country"></select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Industry <span>*</span></label>
+                        <select class="form-control" id="f-form-industry"></select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Job Role <span>*</span></label>
+                        <select class="form-control" id="f-form-job-role"></select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Seniority Level <span>*</span></label>
+                        <select class="form-control" id="f-form-seniority"></select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Company Size <span>*</span></label>
+                        <select class="form-control" id="f-form-company-size"></select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Work Mode <span>*</span></label>
+                        <select class="form-control" id="f-form-work-mode"></select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Years Experience <span>*</span></label>
+                        <input class="form-control" type="number" id="f-years-exp" min="0" max="50" placeholder="e.g. 5"/>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Years at Company <span>*</span></label>
+                        <input class="form-control" type="number" id="f-years-company" min="0" max="50" placeholder="e.g. 2"/>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Salary (USD) <span>*</span></label>
+                        <input class="form-control" type="number" id="f-salary" min="0" placeholder="e.g. 85000"/>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <div class="form-section-title">Work Conditions</div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Work Hrs / Week</label>
+                        <input class="form-control" type="number" id="f-work-hours" min="0" max="100" placeholder="e.g. 40"/>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Meetings / Day</label>
+                        <input class="form-control" type="number" id="f-meetings" min="0" max="20" placeholder="e.g. 4"/>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Team Size</label>
+                        <input class="form-control" type="number" id="f-team-size" min="1" placeholder="e.g. 8"/>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Deadline Pressure (0–10)</label>
+                        <input class="form-control" type="number" id="f-deadline" min="0" max="10" step="0.1" placeholder="e.g. 7.5"/>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Autonomy (0–10)</label>
+                        <input class="form-control" type="number" id="f-autonomy" min="0" max="10" step="0.1" placeholder="e.g. 6"/>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Manager Support (0–10)</label>
+                        <input class="form-control" type="number" id="f-manager" min="0" max="10" step="0.1" placeholder="e.g. 7"/>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <div class="form-section-title">Lifestyle</div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Sleep Hrs / Night</label>
+                        <input class="form-control" type="number" id="f-sleep" min="0" max="12" step="0.5" placeholder="e.g. 7"/>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Exercise Days / Week</label>
+                        <input class="form-control" type="number" id="f-exercise" min="0" max="7" placeholder="e.g. 3"/>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Vacation Days Taken</label>
+                        <input class="form-control" type="number" id="f-vacation" min="0" placeholder="e.g. 10"/>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <div class="form-section-title">Mental Health Scores (0–10)</div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Burnout Score</label>
+                        <input class="form-control" type="number" id="f-burnout" min="0" max="10" step="0.1" placeholder="e.g. 6.5"/>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Stress Score</label>
+                        <input class="form-control" type="number" id="f-stress" min="0" max="10" step="0.1" placeholder="e.g. 5.8"/>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Work-Life Balance</label>
+                        <input class="form-control" type="number" id="f-wlb" min="0" max="10" step="0.1" placeholder="e.g. 5"/>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Job Satisfaction</label>
+                        <input class="form-control" type="number" id="f-job-sat" min="0" max="10" step="0.1" placeholder="e.g. 6"/>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Social Support</label>
+                        <input class="form-control" type="number" id="f-social" min="0" max="10" step="0.1" placeholder="e.g. 7"/>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Burnout Category <span>*</span></label>
+                        <select class="form-control" id="f-form-burnout-cat"></select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <div class="form-section-title">Clinical Assessments</div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">PHQ-9 Score (0–27)</label>
+                        <input class="form-control" type="number" id="f-phq9" min="0" max="27" placeholder="e.g. 8"/>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">PHQ-9 Category <span>*</span></label>
+                        <select class="form-control" id="f-form-phq9-cat"></select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">GAD-7 Score (0–21)</label>
+                        <input class="form-control" type="number" id="f-gad7" min="0" max="21" placeholder="e.g. 6"/>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">GAD-7 Category <span>*</span></label>
+                        <select class="form-control" id="f-form-gad7-cat"></select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section" style="margin-bottom:0">
+                <div class="form-section-title">Therapy, AI &amp; Outcomes</div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Therapy Access</label>
+                        <select class="form-control" id="f-therapy-access">
+                            <option value="">Select…</option>
+                            <option value="true">Yes</option>
+                            <option value="false">No</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Uses Therapy</label>
+                        <select class="form-control" id="f-uses-therapy">
+                            <option value="">Select…</option>
+                            <option value="true">Yes</option>
+                            <option value="false">No</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">AI Tools Daily</label>
+                        <select class="form-control" id="f-ai-tools">
+                            <option value="">Select…</option>
+                            <option value="true">Yes</option>
+                            <option value="false">No</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Seeks MH Support</label>
+                        <select class="form-control" id="f-seeks-mh">
+                            <option value="">Select…</option>
+                            <option value="true">Yes</option>
+                            <option value="false">No</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Job Change Intention</label>
+                        <select class="form-control" id="f-job-change">
+                            <option value="">Select…</option>
+                            <option value="true">Yes</option>
+                            <option value="false">No</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" id="modal-form-cancel">Cancel</button>
+            <button class="btn btn-primary" id="modal-form-save">Save Employee</button>
+        </div>
+    </div>
+</div>
+
+<!-- ── Delete Confirm Modal ──────────────────────────── -->
+<div class="modal-backdrop" id="modal-confirm">
+    <div class="modal" style="max-width:400px">
+        <div class="modal-header">
+            <div class="modal-title">Delete Employee</div>
+            <button class="modal-close" id="confirm-close">✕</button>
+        </div>
+        <div class="modal-body">
+            <p style="color:var(--ink-2)">
+                Permanently delete employee <strong id="confirm-id"></strong>?
+                This action cannot be undone.
+            </p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" id="confirm-cancel">Cancel</button>
+            <button class="btn btn-danger"    id="confirm-delete">Delete</button>
+        </div>
+    </div>
+</div>
+
+<div id="toast-container"></div>
+<script src="js/api.js"></script>
+<script src="js/nav.js"></script>
+<script>
+    /* ── State ───────────────────────────────────────────── */
+    let currentPage   = 0;
+    let totalPages    = 0;
+    let totalElements = 0;
+    let editingId     = null;       // null = create mode
+    let pendingDelete = null;
+    let lookups       = {};         // { countries, jobRoles, … }
+
+    /* ── Lookup bootstrap ────────────────────────────────── */
+    async function loadLookups() {
+        const [countries, jobRoles, seniority, companySizes, industries, workModes,
+            burnoutCats, phq9Cats, gad7Cats] = await Promise.all([
+            API.lookup.countries(),
+            API.lookup.jobRoles(),
+            API.lookup.seniority(),
+            API.lookup.companySizes(),
+            API.lookup.industries(),
+            API.lookup.workModes(),
+            API.lookup.burnoutCats(),
+            API.lookup.phq9Cats(),
+            API.lookup.gad7Cats(),
+        ]);
+        lookups = { countries, jobRoles, seniority, companySizes, industries, workModes,
+            burnoutCats, phq9Cats, gad7Cats };
+
+        // Filter bar selects
+        populateSelect(document.getElementById('f-country'),   countries,   'countryId',   'countryName',   'All Countries');
+        populateSelect(document.getElementById('f-industry'),  industries,  'industryId',  'industryName',  'All Industries');
+        populateSelect(document.getElementById('f-job-role'),  jobRoles,    'jobRoleId',   'roleName',      'All Job Roles');
+        populateSelect(document.getElementById('f-work-mode'), workModes,   'workModeId',  'modeName',      'All Work Modes');
+
+        // Form selects
+        populateSelect(document.getElementById('f-form-country'),      countries,   'countryId',          'countryName');
+        populateSelect(document.getElementById('f-form-industry'),     industries,  'industryId',          'industryName');
+        populateSelect(document.getElementById('f-form-job-role'),     jobRoles,    'jobRoleId',           'roleName');
+        populateSelect(document.getElementById('f-form-seniority'),    seniority,   'seniorityLevelId',    'levelName');
+        populateSelect(document.getElementById('f-form-company-size'), companySizes,'companySizeId',       'sizeLabel');
+        populateSelect(document.getElementById('f-form-work-mode'),    workModes,   'workModeId',          'modeName');
+        populateSelect(document.getElementById('f-form-burnout-cat'),  burnoutCats, 'burnoutCategoryId',   'categoryLabel');
+        populateSelect(document.getElementById('f-form-phq9-cat'),     phq9Cats,    'phq9CategoryId',      'categoryLabel');
+        populateSelect(document.getElementById('f-form-gad7-cat'),     gad7Cats,    'gad7CategoryId',      'categoryLabel');
+    }
+
+    /* ── Table rendering ─────────────────────────────────── */
+    function burnoutBadge(label = '') {
+        if (!label) return '—';
+        const l = label.toLowerCase();
+        if (l.includes('severe') || l.includes('high'))
+            return `<span class="badge badge-red">${label}</span>`;
+        if (l.includes('moderate') || l.includes('medium'))
+            return `<span class="badge badge-orange">${label}</span>`;
+        return `<span class="badge badge-green">${label}</span>`;
+    }
+
+    function renderTable(employees) {
+        const tbody = document.getElementById('emp-tbody');
+        if (!employees.length) {
+            tbody.innerHTML = `<tr class="no-click"><td colspan="12">
+          <div class="empty-state"><div class="icon">🔍</div>No employees match the current filters.</div>
+        </td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = employees.map(e => {
+            const burnoutLabel = e.mentalHealthScores?.burnoutCategory?.categoryLabel ?? '';
+            return `<tr data-id="${e.employeeId}">
+          <td><span style="font-variant-numeric:tabular-nums;font-weight:500;color:var(--accent)">#${e.employeeId}</span></td>
+          <td>${e.age}</td>
+          <td>${e.gender ?? '—'}</td>
+          <td>${e.country?.countryName ?? '—'}</td>
+          <td>${e.industry?.industryName ?? '—'}</td>
+          <td>${e.jobRole?.roleName ?? '—'}</td>
+          <td><span class="badge badge-gray" style="font-size:.67rem">${e.seniorityLevel?.levelName ?? '—'}</span></td>
+          <td>${e.workMode?.modeName ?? '—'}</td>
+          <td class="num">$${Number(e.salaryUsd).toLocaleString()}</td>
+          <td class="num">${e.yearsExperience}</td>
+          <td style="text-align:center">${burnoutBadge(burnoutLabel)}</td>
+          <td style="white-space:nowrap;text-align:right">
+            <button class="btn btn-ghost btn-sm btn-icon" title="View detail"
+                    onclick="event.stopPropagation();location.href='employee-detail.html?id=${e.employeeId}'">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" width="14" height="14">
+                <circle cx="8" cy="8" r="2.5"/><path d="M1.5 8C3 4.5 5.3 2.5 8 2.5s5 2 6.5 5.5C13 11.5 10.7 13.5 8 13.5s-5-2-6.5-5.5z"/>
+              </svg>
+            </button>
+            <button class="btn btn-ghost btn-sm btn-icon" title="Edit"
+                    onclick="event.stopPropagation();openEdit(${e.employeeId})">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" width="14" height="14">
+                <path d="M11.5 2.5l2 2-8 8H3.5v-2l8-8z" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+            <button class="btn btn-danger btn-sm btn-icon" title="Delete"
+                    onclick="event.stopPropagation();openDelete(${e.employeeId})">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" width="14" height="14">
+                <path d="M2 4h12M5 4V2.5h6V4M6 7v5M10 7v5M3 4l1 9.5h8L13 4" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+          </td>
+        </tr>`;
+        }).join('');
+
+        // Row click → detail
+        tbody.querySelectorAll('tr[data-id]').forEach(tr => {
+            tr.addEventListener('click', () => {
+                location.href = `employee-detail.html?id=${tr.dataset.id}`;
+            });
+        });
+    }
+
+    function renderPagination() {
+        const info = document.getElementById('page-info');
+        const btns = document.getElementById('pag-btns');
+        const start = currentPage * 20 + 1;
+        const end   = Math.min((currentPage + 1) * 20, totalElements);
+        info.textContent = `Showing ${start}–${end} of ${totalElements.toLocaleString()}`;
+
+        document.getElementById('topbar-count').textContent =
+            `${totalElements.toLocaleString()} employees`;
+
+        // Show max 7 page buttons
+        const maxBtns = 7;
+        let pages = [];
+        if (totalPages <= maxBtns) {
+            pages = Array.from({length: totalPages}, (_, i) => i);
+        } else {
+            const half = Math.floor(maxBtns / 2);
+            let start = Math.max(0, currentPage - half);
+            let end   = start + maxBtns;
+            if (end > totalPages) { end = totalPages; start = end - maxBtns; }
+            pages = Array.from({length: maxBtns}, (_, i) => start + i);
+        }
+
+        btns.innerHTML =
+            `<button class="pag-btn" ${currentPage === 0 ? 'disabled' : ''} onclick="goPage(${currentPage-1})">‹</button>` +
+            pages.map(p => `<button class="pag-btn ${p===currentPage?'active':''}" onclick="goPage(${p})">${p+1}</button>`).join('') +
+            `<button class="pag-btn" ${currentPage >= totalPages-1 ? 'disabled' : ''} onclick="goPage(${currentPage+1})">›</button>`;
+    }
+
+    /* ── Data fetching ───────────────────────────────────── */
+    function getFilters() {
+        return {
+            countryId:  document.getElementById('f-country').value   || null,
+            industryId: document.getElementById('f-industry').value  || null,
+            jobRoleId:  document.getElementById('f-job-role').value  || null,
+            workModeId: document.getElementById('f-work-mode').value || null,
+            gender:     document.getElementById('f-gender').value    || null,
+        };
+    }
+
+    async function loadPage(page = 0) {
+        currentPage = page;
+        const tbody = document.getElementById('emp-tbody');
+        tbody.innerHTML = `<tr class="no-click"><td colspan="12">
+        <div class="empty-state"><div class="spinner" style="margin:0 auto"></div></div>
+      </td></tr>`;
+
+        try {
+            const filters = getFilters();
+            const hasFilter = Object.values(filters).some(v => v);
+            let data;
+            if (hasFilter) {
+                data = await API.employees.search(filters, page);
+            } else {
+                data = await API.employees.list(page);
+            }
+            totalPages    = data.totalPages;
+            totalElements = data.totalElements;
+            renderTable(data.content);
+            renderPagination();
+        } catch(e) {
+            toast('Failed to load employees: ' + e.message, 'error');
+            tbody.innerHTML = `<tr class="no-click"><td colspan="12">
+          <div class="empty-state"><div class="icon">❌</div>${e.message}</div>
+        </td></tr>`;
+        }
+    }
+
+    function goPage(p) {
+        if (p < 0 || p >= totalPages) return;
+        loadPage(p);
+    }
+
+    /* ── Filter events ───────────────────────────────────── */
+    ['f-country','f-industry','f-job-role','f-work-mode','f-gender'].forEach(id => {
+        document.getElementById(id).addEventListener('change', () => loadPage(0));
+    });
+    document.getElementById('btn-reset').addEventListener('click', () => {
+        ['f-country','f-industry','f-job-role','f-work-mode','f-gender'].forEach(id => {
+            document.getElementById(id).value = '';
+        });
+        loadPage(0);
+    });
+
+    /* ── Add / Edit Modal ────────────────────────────────── */
+    function clearForm() {
+        ['f-emp-id','f-age','f-years-exp','f-years-company','f-salary',
+            'f-work-hours','f-meetings','f-team-size','f-deadline','f-autonomy','f-manager',
+            'f-sleep','f-exercise','f-vacation',
+            'f-burnout','f-stress','f-wlb','f-job-sat','f-social',
+            'f-phq9','f-gad7'].forEach(id => { document.getElementById(id).value = ''; });
+
+        ['f-form-gender','f-form-country','f-form-industry','f-form-job-role',
+            'f-form-seniority','f-form-company-size','f-form-work-mode',
+            'f-form-burnout-cat','f-form-phq9-cat','f-form-gad7-cat',
+            'f-therapy-access','f-uses-therapy','f-ai-tools','f-seeks-mh','f-job-change'].forEach(id => {
+            document.getElementById(id).selectedIndex = 0;
+        });
+    }
+
+    function fillForm(e) {
+        const wc  = e.workConditions    || {};
+        const lm  = e.lifestyleMetrics  || {};
+        const mhs = e.mentalHealthScores|| {};
+        const cs  = e.clinicalScores    || {};
+        const ti  = e.therapyInfo       || {};
+        const ai  = e.aiToolUsage       || {};
+        const eo  = e.employeeOutcomes  || {};
+
+        const set = (id, val) => { const el = document.getElementById(id); if(el && val != null) el.value = val; };
+
+        set('f-emp-id',       e.employeeId);
+        set('f-age',          e.age);
+        set('f-form-gender',  e.gender);
+        set('f-form-country', e.country?.countryId);
+        set('f-form-industry',e.industry?.industryId);
+        set('f-form-job-role',e.jobRole?.jobRoleId);
+        set('f-form-seniority',    e.seniorityLevel?.seniorityLevelId);
+        set('f-form-company-size', e.companySize?.companySizeId);
+        set('f-form-work-mode',    e.workMode?.workModeId);
+        set('f-years-exp',    e.yearsExperience);
+        set('f-years-company',e.yearsAtCompany);
+        set('f-salary',       e.salaryUsd);
+
+        set('f-work-hours', wc.workHoursPerWeek);
+        set('f-meetings',   wc.meetingsPerDay);
+        set('f-team-size',  wc.teamSize);
+        set('f-deadline',   wc.deadlinePressureScore);
+        set('f-autonomy',   wc.autonomyScore);
+        set('f-manager',    wc.managerSupportScore);
+
+        set('f-sleep',    lm.sleepHoursPerNight);
+        set('f-exercise', lm.exerciseDaysPerWeek);
+        set('f-vacation', lm.vacationDaysTaken);
+
+        set('f-burnout',  mhs.burnoutScore);
+        set('f-stress',   mhs.stressScore);
+        set('f-wlb',      mhs.workLifeBalanceScore);
+        set('f-job-sat',  mhs.jobSatisfactionScore);
+        set('f-social',   mhs.socialSupportScore);
+        set('f-form-burnout-cat', mhs.burnoutCategory?.burnoutCategoryId);
+
+        set('f-phq9', cs.phq9Score);
+        set('f-form-phq9-cat', cs.phq9Category?.phq9CategoryId);
+        set('f-gad7', cs.gad7Score);
+        set('f-form-gad7-cat', cs.gad7Category?.gad7CategoryId);
+
+        set('f-therapy-access', ti.therapyAccess != null ? String(ti.therapyAccess) : '');
+        set('f-uses-therapy',   ti.usesTherapy   != null ? String(ti.usesTherapy)   : '');
+        set('f-ai-tools',       ai.aiToolsDaily  != null ? String(ai.aiToolsDaily)  : '');
+        set('f-seeks-mh',       eo.seeksMentalHealthSupport != null ? String(eo.seeksMentalHealthSupport) : '');
+        set('f-job-change',     eo.jobChangeIntention       != null ? String(eo.jobChangeIntention)       : '');
+    }
+
+    function buildPayload() {
+        const g  = id => document.getElementById(id).value;
+        // Integer fields
+        const ni = id => { const v = g(id); return v === '' ? null : parseInt(v, 10); };
+        // BigDecimal fields (sent as JS number — Jackson deserialises fine)
+        const nd = id => { const v = g(id); return v === '' ? null : parseFloat(v); };
+        // Boolean fields
+        const b  = id => { const v = g(id); return v === '' ? null : v === 'true'; };
+
+        return {
+            // employeeId is @NotNull — required by the DTO on both create and update
+            employeeId: editingId ?? ni('f-emp-id'),
+
+            // Demographics & employment
+            age:              ni('f-age'),
+            gender:           g('f-form-gender') || null,
+            countryId:        ni('f-form-country'),
+            industryId:       ni('f-form-industry'),
+            jobRoleId:        ni('f-form-job-role'),
+            seniorityLevelId: ni('f-form-seniority'),
+            companySizeId:    ni('f-form-company-size'),
+            workModeId:       ni('f-form-work-mode'),
+            yearsExperience:  nd('f-years-exp'),       // BigDecimal
+            yearsAtCompany:   nd('f-years-company'),   // BigDecimal
+            salaryUsd:        nd('f-salary'),          // BigDecimal
+
+            // Work conditions
+            workHoursPerWeek:     ni('f-work-hours'),  // Integer
+            meetingsPerDay:       nd('f-meetings'),    // BigDecimal
+            teamSize:             ni('f-team-size'),   // Integer
+            deadlinePressureScore:nd('f-deadline'),    // BigDecimal
+            autonomyScore:        nd('f-autonomy'),    // BigDecimal
+            managerSupportScore:  nd('f-manager'),     // BigDecimal
+
+            // Lifestyle
+            sleepHoursPerNight:  nd('f-sleep'),        // BigDecimal
+            exerciseDaysPerWeek: ni('f-exercise'),     // Integer
+            vacationDaysTaken:   ni('f-vacation'),     // Integer
+
+            // Mental health scores
+            burnoutScore:         nd('f-burnout'),     // BigDecimal
+            stressScore:          nd('f-stress'),      // BigDecimal
+            workLifeBalanceScore: nd('f-wlb'),         // BigDecimal
+            jobSatisfactionScore: nd('f-job-sat'),     // BigDecimal
+            socialSupportScore:   nd('f-social'),      // BigDecimal
+            burnoutCategoryId:    ni('f-form-burnout-cat'), // Integer
+
+            // Clinical scores
+            phq9Score:      ni('f-phq9'),              // Integer
+            phq9CategoryId: ni('f-form-phq9-cat'),     // Integer
+            gad7Score:      ni('f-gad7'),              // Integer
+            gad7CategoryId: ni('f-form-gad7-cat'),     // Integer
+
+            // Therapy / AI / Outcomes
+            therapyAccess:            b('f-therapy-access'),
+            usesTherapy:              b('f-uses-therapy'),
+            aiToolsDaily:             b('f-ai-tools'),
+            seeksMentalHealthSupport: b('f-seeks-mh'),
+            jobChangeIntention:       b('f-job-change'),
+        };
+    }
+
+    async function openAdd() {
+        editingId = null;
+        clearForm();
+        clearFormError();
+        document.getElementById('f-empid-group').style.display = '';
+        document.getElementById('modal-form-title').textContent = 'Add Employee';
+        document.getElementById('modal-form-save').textContent  = 'Create Employee';
+
+        // Auto-generate next ID
+        try {
+            const { nextId } = await fetch('/api/employees/next-id').then(r => r.json());
+            const empIdField = document.getElementById('f-emp-id');
+            empIdField.value = nextId;
+            empIdField.readOnly = true;
+            empIdField.style.opacity = '0.6';
+            empIdField.style.cursor = 'not-allowed';
+            document.querySelector('#f-empid-group .form-hint').textContent = 'Auto-generated';
+        } catch(e) {
+            console.warn('Could not fetch next ID:', e);
+        }
+
+        document.getElementById('modal-form').classList.add('open');
+    }
+
+    async function openEdit(id) {
+        editingId = id;
+        clearForm();
+        clearFormError();
+        document.getElementById('f-empid-group').style.display = 'none'; // ID fixed in edit
+        document.getElementById('modal-form-title').textContent = `Edit Employee #${id}`;
+        document.getElementById('modal-form-save').textContent  = 'Save Changes';
+        document.getElementById('modal-form').classList.add('open');
+        try {
+            const emp = await API.employees.get(id);
+            fillForm(emp);
+        } catch(e) {
+            toast('Could not load employee: ' + e.message, 'error');
+            document.getElementById('modal-form').classList.remove('open');
+        }
+    }
+
+    function closeFormModal() {
+        document.getElementById('modal-form').classList.remove('open');
+        editingId = null;
+
+        // Reset ID field back to normal
+        const empIdField = document.getElementById('f-emp-id');
+        empIdField.readOnly = false;
+        empIdField.style.opacity = '';
+        empIdField.style.cursor = '';
+        const hint = document.querySelector('#f-empid-group .form-hint');
+        if (hint) hint.textContent = 'Must be unique';
+    }
+
+    document.getElementById('btn-add').addEventListener('click', openAdd);
+    document.getElementById('modal-form-close').addEventListener('click', closeFormModal);
+    document.getElementById('modal-form-cancel').addEventListener('click', closeFormModal);
+
+    document.getElementById('modal-form-save').addEventListener('click', async () => {
+        const payload = buildPayload();
+        console.log('[MindMetrics] Submitting payload:', JSON.stringify(payload, null, 2));
+
+        const saveBtn = document.getElementById('modal-form-save');
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'Saving…';
+        try {
+            if (editingId) {
+                await apiSave('PUT', `/api/employees/${editingId}`, payload);
+                toast(`Employee #${editingId} updated`);
+            } else {
+                const created = await apiSave('POST', `/api/employees`, payload);
+                toast(`Employee #${created.employeeId} created`);
+            }
+            closeFormModal();
+            loadPage(currentPage);
+        } catch(e) {
+            // Show full error detail in the modal so it's easy to read
+            showFormError(e.message);
+        } finally {
+            saveBtn.disabled = false;
+            saveBtn.textContent = editingId ? 'Save Changes' : 'Create Employee';
+        }
+    });
+
+    /* Richer fetch that surfaces Spring's fieldErrors / message */
+    async function apiSave(method, path, body) {
+        const res = await fetch(path, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+        });
+        if (res.ok) {
+            if (res.status === 204) return null;
+            return res.json();
+        }
+        let detail = `HTTP ${res.status}`;
+        try {
+            const err = await res.json();
+            // Spring @Valid produces an `errors` array with defaultMessage per field
+            if (Array.isArray(err.errors) && err.errors.length) {
+                detail = err.errors.map(e => `• ${e.field}: ${e.defaultMessage}`).join('\n');
+            } else if (err.message) {
+                detail = err.message;
+            } else if (err.error) {
+                detail = `${err.error}${err.path ? ' — ' + err.path : ''}`;
+            } else {
+                detail = JSON.stringify(err);
+            }
+        } catch(_) { /* non-JSON body */ }
+        console.error('[MindMetrics] Save error:', detail);
+        throw new Error(detail);
+    }
+
+    function showFormError(msg) {
+        let box = document.getElementById('form-error-box');
+        if (!box) {
+            box = document.createElement('div');
+            box.id = 'form-error-box';
+            box.style.cssText = `
+          margin: 0 26px 16px;
+          padding: 12px 16px;
+          background: var(--danger-light);
+          border: 1px solid rgba(158,36,36,.25);
+          border-radius: var(--r);
+          color: var(--danger);
+          font-size: .8rem;
+          white-space: pre-line;
+          line-height: 1.6;
+        `;
+            document.querySelector('#modal-form .modal-footer').before(box);
+        }
+        box.textContent = '⚠️ Save failed:\n' + msg;
+        box.style.display = 'block';
+    }
+
+    // Clear error box when modal opens
+    function clearFormError() {
+        const box = document.getElementById('form-error-box');
+        if (box) box.style.display = 'none';
+    }
+
+    /* ── Delete Modal ────────────────────────────────────── */
+    function openDelete(id) {
+        pendingDelete = id;
+        document.getElementById('confirm-id').textContent = `#${id}`;
+        document.getElementById('modal-confirm').classList.add('open');
+    }
+    function closeDeleteModal() {
+        document.getElementById('modal-confirm').classList.remove('open');
+        pendingDelete = null;
+    }
+
+    document.getElementById('confirm-close').addEventListener('click',  closeDeleteModal);
+    document.getElementById('confirm-cancel').addEventListener('click', closeDeleteModal);
+    document.getElementById('confirm-delete').addEventListener('click', async () => {
+        const delBtn = document.getElementById('confirm-delete');
+        delBtn.disabled = true;
+        try {
+            await API.employees.delete(pendingDelete);
+            toast(`Employee #${pendingDelete} deleted`);
+            closeDeleteModal();
+            loadPage(currentPage);
+        } catch(e) {
+            toast('Delete failed: ' + e.message, 'error');
+            delBtn.disabled = false;
+        }
+    });
+
+    /* Close modals on backdrop click */
+    document.getElementById('modal-form').addEventListener('click', e => {
+        if (e.target === document.getElementById('modal-form')) closeFormModal();
+    });
+    document.getElementById('modal-confirm').addEventListener('click', e => {
+        if (e.target === document.getElementById('modal-confirm')) closeDeleteModal();
+    });
+
+    /* ── URL param: open edit directly (from employee-detail) */
+    const urlParams = new URLSearchParams(location.search);
+    const editParam = urlParams.get('edit');
+
+    /* ── Init ────────────────────────────────────────────── */
+    document.addEventListener('DOMContentLoaded', async () => {
+        await loadLookups();
+        await loadPage(0);
+        if (editParam) openEdit(+editParam);
+    });
+</script>
+</body>
+</html>
