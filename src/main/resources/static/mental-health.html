@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <title>Mental Health Analytics — MindMetrics</title>
+    <link rel="stylesheet" href="css/style.css"/>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<div class="main">
+    <header class="topbar">
+        <span class="topbar-title">Mental Health Analytics</span>
+        <span class="topbar-sub">Burnout &amp; stress scores across the workforce</span>
+    </header>
+
+    <div class="page">
+
+        <!-- ── Sticky filter bar ────────────────────────── -->
+        <div class="filter-card anim-fade-up" id="filter-bar">
+            <span class="filter-label">Filter</span>
+            <select class="form-control" id="f-industry"><option value="">All Industries</option></select>
+            <select class="form-control" id="f-seniority"><option value="">All Seniority Levels</option></select>
+            <div class="filter-divider"></div>
+            <button class="btn btn-primary btn-sm"   id="btn-apply">Apply</button>
+            <button class="btn btn-secondary btn-sm" id="btn-clear">✕ Clear</button>
+            <span class="badge badge-orange" id="badge-active" style="display:none"></span>
+        </div>
+
+        <!-- ── KPI stat cards ──────────────────────────── -->
+        <div class="stats-row" id="summary-cards">
+            <div class="stat-card anim-fade-up anim-delay-1">
+                <div class="stat-head"><div class="skeleton" style="width:34px;height:34px;border-radius:9px"></div></div>
+                <div class="skeleton mb-2" style="height:.65rem;width:90px"></div>
+                <div class="skeleton" style="height:2rem;width:64px"></div>
+            </div>
+            <div class="stat-card warn anim-fade-up anim-delay-2">
+                <div class="stat-head"><div class="skeleton" style="width:34px;height:34px;border-radius:9px"></div></div>
+                <div class="skeleton mb-2" style="height:.65rem;width:80px"></div>
+                <div class="skeleton" style="height:2rem;width:64px"></div>
+            </div>
+            <div class="stat-card info anim-fade-up anim-delay-3">
+                <div class="stat-head"><div class="skeleton" style="width:34px;height:34px;border-radius:9px"></div></div>
+                <div class="skeleton mb-2" style="height:.65rem;width:110px"></div>
+                <div class="skeleton" style="height:2rem;width:64px"></div>
+            </div>
+            <div class="stat-card anim-fade-up anim-delay-4">
+                <div class="stat-head"><div class="skeleton" style="width:34px;height:34px;border-radius:9px"></div></div>
+                <div class="skeleton mb-2" style="height:.65rem;width:110px"></div>
+                <div class="skeleton" style="height:2rem;width:64px"></div>
+            </div>
+            <div class="stat-card danger anim-fade-up anim-delay-5">
+                <div class="stat-head"><div class="skeleton" style="width:34px;height:34px;border-radius:9px"></div></div>
+                <div class="skeleton mb-2" style="height:.65rem;width:100px"></div>
+                <div class="skeleton" style="height:2rem;width:64px"></div>
+            </div>
+        </div>
+
+        <!-- ── Row 1: Burnout by industry + Donut ──────── -->
+        <div class="grid-2 mb-5 anim-fade-up anim-delay-2">
+
+            <!-- Horizontal bar: burnout by industry -->
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <div class="card-title">Avg Burnout Score by Industry</div>
+                        <div class="card-sub text-muted">Sorted highest to lowest · out of 10</div>
+                    </div>
+                    <span class="badge badge-orange" id="badge-ind" style="display:none"></span>
+                </div>
+                <div class="chart-wrap tall" id="wrap-burnout-ind">
+                    <div class="chart-skeleton">
+                        <div class="chart-skeleton-bar" style="width:92%"></div>
+                        <div class="chart-skeleton-bar" style="width:80%"></div>
+                        <div class="chart-skeleton-bar" style="width:74%"></div>
+                        <div class="chart-skeleton-bar" style="width:68%"></div>
+                        <div class="chart-skeleton-bar" style="width:60%"></div>
+                        <div class="chart-skeleton-bar" style="width:52%"></div>
+                    </div>
+                    <canvas id="chart-burnout-industry"></canvas>
+                </div>
+            </div>
+
+            <!-- Donut: burnout category distribution -->
+            <div class="card" style="display:flex;flex-direction:column">
+                <div class="card-header">
+                    <div>
+                        <div class="card-title">Burnout Category Distribution</div>
+                        <div class="card-sub text-muted">Proportion per severity level</div>
+                    </div>
+                </div>
+
+                <!-- Donut + legend side by side -->
+                <div style="display:flex;gap:20px;align-items:center;flex:1">
+                    <div style="position:relative;width:200px;height:200px;flex-shrink:0">
+                        <canvas id="chart-burnout-dist"></canvas>
+                        <!-- Centre label -->
+                        <div id="donut-center" style="
+              position:absolute;inset:0;
+              display:flex;flex-direction:column;
+              align-items:center;justify-content:center;
+              pointer-events:none;text-align:center">
+                            <div style="font-family:'DM Serif Display',serif;font-size:1.5rem;line-height:1" id="donut-pct">—</div>
+                            <div style="font-size:.62rem;color:var(--ink-4);text-transform:uppercase;letter-spacing:.07em;margin-top:3px">Severe</div>
+                        </div>
+                    </div>
+
+                    <div class="chart-legend flex-1" id="burnout-dist-legend"></div>
+                </div>
+
+                <!-- Insight below donut -->
+                <div id="dist-insight" class="insight-strip danger mt-4" style="display:none">
+                    <span class="insight-icon">🚨</span>
+                    <div class="insight-body"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Row 2: Stress by mode + Score score-rings ─ -->
+        <div class="grid-2 anim-fade-up anim-delay-3">
+
+            <!-- Vertical bar: stress by work mode -->
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <div class="card-title">Avg Stress Score by Work Mode</div>
+                        <div class="card-sub text-muted">Remote · Hybrid · On-site</div>
+                    </div>
+                </div>
+                <div class="chart-wrap" style="height:220px"><canvas id="chart-stress-mode"></canvas></div>
+                <div id="mode-insight" style="margin-top:14px"></div>
+            </div>
+
+            <!-- Score breakdown rings for all 5 metrics -->
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <div class="card-title">Score Breakdown</div>
+                        <div class="card-sub text-muted">All five mental health metrics at a glance</div>
+                    </div>
+                </div>
+                <div id="score-rings" class="metric-compare">
+                    <!-- Filled by JS -->
+                    <div class="skeleton" style="height:34px;border-radius:6px"></div>
+                    <div class="skeleton" style="height:34px;border-radius:6px"></div>
+                    <div class="skeleton" style="height:34px;border-radius:6px"></div>
+                    <div class="skeleton" style="height:34px;border-radius:6px"></div>
+                    <div class="skeleton" style="height:34px;border-radius:6px"></div>
+                </div>
+            </div>
+        </div>
+
+    </div><!-- /page -->
+</div><!-- /main -->
+
+<div id="toast-container"></div>
+<script src="js/api.js"></script>
+<script src="js/nav.js"></script>
+<script>
+    /* ── Chart defaults ──────────────────────────────────── */
+    Chart.defaults.font.family = "'DM Sans', sans-serif";
+    Chart.defaults.color = '#78726A';
+
+    const C = {
+      green:   '#2D6E58',
+      greenL:  '#3D9070',
+      orange:  '#C05A1F',
+      orangeL: '#E07040',
+      blue:    '#2455A0',
+      blueL:   '#4575C0',
+      red:     '#9E2424',
+      cat:     ['#3D9070','#E07040','#C05A1F','#9E2424'],
+      mode:    { 'Remote':'#2D6E58','Hybrid':'#2455A0','On-site':'#C05A1F' },
+    };
+
+    const TT = {
+      backgroundColor: 'rgba(27,25,22,.92)',
+      titleColor: '#F6F3EE',
+      bodyColor: '#C4BDB0',
+      padding: 10,
+      cornerRadius: 8,
+      titleFont: { family:"'DM Serif Display',serif", size:13 },
+      bodyFont:  { family:"'DM Sans',sans-serif", size:12 },
+    };
+
+    let charts = {}, lookups = {};
+    function destroyChart(id){ if(charts[id]){ charts[id].destroy(); delete charts[id]; } }
+
+    /* ── Count-up ────────────────────────────────────────── */
+    function animateValue(el, to, isFloat) {
+      if (!el) return;
+      const dur = 700, start = performance.now();
+      (function step(now){
+        const p = Math.min((now - start)/dur, 1);
+        const e = 1 - Math.pow(1-p, 3);
+        const v = to * e;
+        el.textContent = isFloat ? v.toFixed(2) : Math.round(v).toLocaleString();
+        if (p < 1) requestAnimationFrame(step);
+      })(performance.now());
+    }
+
+    /* ── Clear skeleton ──────────────────────────────────── */
+    function clearSkeleton(wrapperId){
+      const sk = document.querySelector(`#${wrapperId} .chart-skeleton`);
+      if (sk) sk.remove();
+    }
+
+    /* ── Lookups ─────────────────────────────────────────── */
+    async function loadLookups(){
+      const [industries, seniority] = await Promise.all([
+        API.lookup.industries(), API.lookup.seniority()
+      ]);
+      lookups = { industries, seniority };
+      populateSelect(document.getElementById('f-industry'),  industries, 'industryId',       'industryName',    'All Industries');
+      populateSelect(document.getElementById('f-seniority'), seniority,  'seniorityLevelId', 'levelName',       'All Seniority Levels');
+    }
+
+    /* ── Filter params ───────────────────────────────────── */
+    function getParams(){
+      const p = {};
+      const ind = document.getElementById('f-industry').value;
+      const sen = document.getElementById('f-seniority').value;
+      if (ind) p.industryId       = ind;
+      if (sen) p.seniorityLevelId = sen;
+      return Object.keys(p).length ? p : null;
+    }
+
+    function getFilterLabel(params){
+      if (!params) return null;
+      const parts = [];
+      if (params.industryId)
+        parts.push(lookups.industries.find(i => i.industryId == params.industryId)?.industryName);
+      if (params.seniorityLevelId)
+        parts.push(lookups.seniority.find(s => s.seniorityLevelId == params.seniorityLevelId)?.levelName);
+      return parts.filter(Boolean).join(' · ') || null;
+    }
+
+    /* ── Load all ────────────────────────────────────────── */
+    async function loadAll(){
+      const params = getParams();
+      const label  = getFilterLabel(params);
+
+      /* Active filter badge */
+      const badge = document.getElementById('badge-active');
+      const indBadge = document.getElementById('badge-ind');
+      if (label){
+        badge.textContent = label; badge.style.display = '';
+        indBadge.textContent = label; indBadge.style.display = '';
+      } else {
+        badge.style.display = indBadge.style.display = 'none';
+      }
+
+      try {
+        const [summary, burnoutInd, stressMode, burnoutDist] = await Promise.all([
+          API.analytics.mentalHealthSummary(),
+          API.analytics.burnoutByIndustry(params),
+          API.analytics.stressByWorkMode(params),
+          API.analytics.burnoutCategoryDistribution(params),
+        ]);
+        renderSummaryCards(summary);
+        renderScoreRings(summary);
+        renderBurnoutByIndustry(burnoutInd);
+        renderBurnoutDist(burnoutDist);
+        renderStressByMode(stressMode);
+      } catch(err){
+        toast('Failed to load analytics: ' + err.message, 'error');
+      }
+    }
+
+    /* ── Summary cards ───────────────────────────────────── */
+    function renderSummaryCards(s){
+      document.getElementById('summary-cards').innerHTML = `
+        <div class="stat-card anim-fade-up anim-delay-1">
+          <div class="stat-head"><div class="stat-icon">🔥</div></div>
+          <div class="stat-label">Avg Burnout</div>
+          <div class="stat-value" id="sv-burnout">0.00</div>
+          <div class="stat-sub">out of 10.0</div>
+        </div>
+        <div class="stat-card warn anim-fade-up anim-delay-2">
+          <div class="stat-head"><div class="stat-icon">😰</div></div>
+          <div class="stat-label">Avg Stress</div>
+          <div class="stat-value" id="sv-stress">0.00</div>
+          <div class="stat-sub">out of 10.0</div>
+        </div>
+        <div class="stat-card info anim-fade-up anim-delay-3">
+          <div class="stat-head"><div class="stat-icon">😊</div></div>
+          <div class="stat-label">Avg Job Satisfaction</div>
+          <div class="stat-value" id="sv-sat">0.00</div>
+          <div class="stat-sub">out of 10.0</div>
+        </div>
+        <div class="stat-card anim-fade-up anim-delay-4">
+          <div class="stat-head"><div class="stat-icon">⚖️</div></div>
+          <div class="stat-label">Avg Work-Life Balance</div>
+          <div class="stat-value" id="sv-wlb">0.00</div>
+          <div class="stat-sub">out of 10.0</div>
+        </div>
+        <div class="stat-card danger anim-fade-up anim-delay-5">
+          <div class="stat-head"><div class="stat-icon">🚨</div></div>
+          <div class="stat-label">Severe Burnout Cases</div>
+          <div class="stat-value" id="sv-severe">0</div>
+          <div class="stat-sub">employees flagged</div>
+        </div>`;
+
+      animateValue(document.getElementById('sv-burnout'), parseFloat(s.avg_burnout),           true);
+      animateValue(document.getElementById('sv-stress'),  parseFloat(s.avg_stress),            true);
+      animateValue(document.getElementById('sv-sat'),     parseFloat(s.avg_job_satisfaction),  true);
+      animateValue(document.getElementById('sv-wlb'),     parseFloat(s.avg_work_life_balance), true);
+      animateValue(document.getElementById('sv-severe'),  parseInt(s.severe_burnout_count),    false);
+    }
+
+    /* ── Score rings / progress bars ────────────────────── */
+    function renderScoreRings(s){
+      const metrics = [
+        { label:'Burnout',          val: parseFloat(s.avg_burnout),           cls:'danger',  icon:'🔥' },
+        { label:'Stress',           val: parseFloat(s.avg_stress),            cls:'warn',    icon:'😰' },
+        { label:'Job Satisfaction', val: parseFloat(s.avg_job_satisfaction),  cls:'info',    icon:'😊' },
+        { label:'Work-Life Balance',val: parseFloat(s.avg_work_life_balance), cls:'',        icon:'⚖️' },
+      ];
+
+      const colors = {
+        'danger': 'linear-gradient(90deg,#9E2424,#C04040)',
+        'warn':   'linear-gradient(90deg,#C05A1F,#E07040)',
+        'info':   'linear-gradient(90deg,#2455A0,#4575C0)',
+        '':       'linear-gradient(90deg,#2D6E58,#3D9070)',
+      };
+
+      document.getElementById('score-rings').innerHTML = metrics.map(m => {
+        const pct = (m.val / 10 * 100).toFixed(1);
+        const bg  = colors[m.cls];
+        return `
+          <div class="metric-compare-row">
+            <div class="metric-compare-labels">
+              <span style="display:flex;align-items:center;gap:6px">
+                <span>${m.icon}</span>
+                <span style="font-size:.82rem;font-weight:500;color:var(--ink-2)">${m.label}</span>
+              </span>
+              <span class="metric-compare-val">${m.val.toFixed(2)} <span style="font-size:.7rem;font-weight:400;color:var(--ink-4)">/ 10</span></span>
+            </div>
+            <div class="metric-compare-track">
+              <div class="metric-compare-fill" style="width:0%;background:${bg};transition:width .8s cubic-bezier(.4,0,.2,1)"
+                   data-pct="${pct}"></div>
+            </div>
+          </div>`;
+      }).join('');
+
+      /* Animate fill bars after brief delay */
+      setTimeout(() => {
+        document.querySelectorAll('#score-rings .metric-compare-fill').forEach(el => {
+          el.style.width = el.dataset.pct + '%';
+        });
+      }, 80);
+    }
+
+    /* ── Burnout by industry ─────────────────────────────── */
+    function renderBurnoutByIndustry(data){
+      clearSkeleton('wrap-burnout-ind');
+      destroyChart('burnout-ind');
+      charts['burnout-ind'] = new Chart(document.getElementById('chart-burnout-industry'), {
+        type: 'bar',
+        data: {
+          labels: data.map(r => r.industry_name),
+          datasets: [{
+            label: 'Avg Burnout Score',
+            data:  data.map(r => r.avg_burnout),
+            backgroundColor: data.map((_, i) =>
+              `hsla(${148 + i*10}, ${46-i}%, ${50 - i*1.5}%, .88)`),
+            borderRadius: { topRight:6, bottomRight:6 },
+            borderSkipped: 'left',
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true, maintainAspectRatio: false,
+          animation: { duration:800, easing:'easeOutQuart' },
+          plugins: {
+            legend: { display:false },
+            tooltip: {
+              ...TT,
+              callbacks: {
+                title: ctx => ctx[0].label,
+                label: ctx => ` Score: ${ctx.parsed.x}  ·  ${(data[ctx.dataIndex].employee_count||0).toLocaleString()} employees`,
+              }
+            }
+          },
+          scales: {
+            x: {
+              min:0, max:10,
+              grid: { color:'rgba(224,218,208,.35)' },
+              ticks: { font:{size:11} },
+            },
+            y: {
+              grid: { display:false },
+              ticks: { font:{size:11}, padding:6 },
+            }
+          }
+        }
+      });
+    }
+
+    /* ── Burnout category donut ──────────────────────────── */
+    function renderBurnoutDist(data){
+      destroyChart('burnout-dist');
+
+      /* Severe % for centre label */
+      const severeRow = data.find(d => d.category_label?.toLowerCase().includes('severe'));
+      const severePct = severeRow ? severeRow.percentage : '—';
+      const el = document.getElementById('donut-pct');
+      if (el) el.textContent = severePct !== '—' ? `${severePct}%` : '—';
+
+      charts['burnout-dist'] = new Chart(document.getElementById('chart-burnout-dist'), {
+        type: 'doughnut',
+        data: {
+          labels: data.map(r => r.category_label),
+          datasets: [{
+            data: data.map(r => r.employee_count),
+            backgroundColor: C.cat,
+            borderWidth: 3,
+            borderColor: '#fff',
+            hoverOffset: 8,
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          cutout: '68%',
+          animation: { animateRotate:true, duration:900, easing:'easeOutQuart' },
+          plugins: {
+            legend: { display:false },
+            tooltip: {
+              ...TT,
+              callbacks: {
+                title: ctx => ctx[0].label,
+                label: ctx => ` ${ctx.parsed.toLocaleString()} employees  (${data[ctx.dataIndex].percentage}%)`,
+              }
+            }
+          }
+        }
+      });
+
+      /* Custom legend */
+      const maxCount = Math.max(...data.map(d => d.employee_count));
+      document.getElementById('burnout-dist-legend').innerHTML = data.map((r, i) => `
+        <div class="chart-legend-item">
+          <span class="chart-legend-dot" style="background:${C.cat[i]}"></span>
+          <span class="chart-legend-label">${r.category_label}</span>
+          <span class="chart-legend-count">${Number(r.employee_count).toLocaleString()}</span>
+          <span class="chart-legend-pct">${r.percentage}%</span>
+        </div>
+        <div class="chart-legend-bar" style="margin-bottom:6px">
+          <div class="chart-legend-fill"
+               style="width:0%;background:${C.cat[i]};transition:width .7s cubic-bezier(.4,0,.2,1)"
+               data-w="${(r.employee_count/maxCount*100).toFixed(1)}">
+          </div>
+        </div>`).join('');
+
+      /* Animate legend bars */
+      setTimeout(() => {
+        document.querySelectorAll('#burnout-dist-legend .chart-legend-fill').forEach(el => {
+          el.style.width = el.dataset.w + '%';
+        });
+      }, 80);
+
+      /* Insight: flag if severe > 20 % */
+      const insightEl = document.getElementById('dist-insight');
+      if (severeRow && parseFloat(severeRow.percentage) >= 20){
+        insightEl.style.display = 'flex';
+        insightEl.querySelector('.insight-body').innerHTML =
+          `<strong>${severeRow.percentage}%</strong> of employees fall into the Severe burnout category
+           (${Number(severeRow.employee_count).toLocaleString()} people). Immediate intervention strategies are recommended.`;
+      } else {
+        insightEl.style.display = 'none';
+      }
+    }
+
+    /* ── Stress by work mode ─────────────────────────────── */
+    function renderStressByMode(data){
+      destroyChart('stress-mode');
+      charts['stress-mode'] = new Chart(document.getElementById('chart-stress-mode'), {
+        type: 'bar',
+        data: {
+          labels: data.map(r => r.work_mode),
+          datasets: [{
+            label: 'Avg Stress Score',
+            data:  data.map(r => r.avg_stress),
+            backgroundColor: data.map(r => C.mode[r.work_mode] || C.blue),
+            borderRadius: 8,
+            borderSkipped: false,
+            maxBarThickness: 90,
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          animation: { duration:800, easing:'easeOutQuart' },
+          plugins: {
+            legend: { display:false },
+            tooltip: {
+              ...TT,
+              callbacks: {
+                title: ctx => ctx[0].label + ' Work Mode',
+                label: ctx => ` Avg Stress: ${ctx.parsed.y}  ·  ${(data[ctx.dataIndex].employee_count||0).toLocaleString()} employees`,
+              }
+            }
+          },
+          scales: {
+            y: { min:0, max:10, grid:{ color:'rgba(224,218,208,.35)' } },
+            x: { grid:{ display:false } }
+          }
+        }
+      });
+
+      /* Insight strip */
+      const sorted = [...data].sort((a,b) => b.avg_stress - a.avg_stress);
+      const top    = sorted[0];
+      const bot    = sorted[sorted.length - 1];
+      const diff   = (top.avg_stress - bot.avg_stress).toFixed(2);
+      if (top && parseFloat(diff) >= 0.05){
+        document.getElementById('mode-insight').innerHTML = `
+          <div class="insight-strip warn">
+            <span class="insight-icon">⚡</span>
+            <div class="insight-body">
+              <strong>${top.work_mode}</strong> workers report the highest avg stress
+              (${top.avg_stress}/10), <strong>${diff} points</strong> above
+              <strong>${bot.work_mode}</strong> (${bot.avg_stress}/10).
+            </div>
+          </div>`;
+      } else {
+        document.getElementById('mode-insight').innerHTML = '';
+      }
+    }
+
+    /* ── Events ──────────────────────────────────────────── */
+    document.getElementById('btn-apply').addEventListener('click', loadAll);
+    document.getElementById('btn-clear').addEventListener('click', () => {
+      document.getElementById('f-industry').value  = '';
+      document.getElementById('f-seniority').value = '';
+      loadAll();
+    });
+
+    /* ── Init ────────────────────────────────────────────── */
+    document.addEventListener('DOMContentLoaded', async () => {
+      await loadLookups();
+      loadAll();
+    });
+</script>
+</body>
+</html>

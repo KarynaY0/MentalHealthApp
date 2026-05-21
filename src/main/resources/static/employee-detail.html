@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <title>Employee Detail — MindMetrics</title>
+    <link rel="stylesheet" href="css/style.css"/>
+</head>
+<body>
+
+<div class="main">
+    <header class="topbar">
+        <a href="employees.html" class="btn btn-ghost btn-sm" style="gap:5px">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+                <path d="M10 3L5 8l5 5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Back
+        </a>
+        <span class="topbar-title" id="topbar-title">Employee Detail</span>
+        <button class="btn btn-secondary btn-sm" id="btn-edit">✏️ Edit</button>
+        <button class="btn btn-danger btn-sm"    id="btn-delete">🗑️ Delete</button>
+    </header>
+
+    <div class="page" id="detail-page">
+        <div style="padding:60px;text-align:center;color:var(--ink-4)">Loading employee data…</div>
+    </div>
+</div>
+
+<!-- Delete confirm -->
+<div class="modal-backdrop" id="modal-confirm">
+    <div class="modal" style="max-width:400px">
+        <div class="modal-header">
+            <div class="modal-title">Delete Employee</div>
+            <button class="modal-close" onclick="document.getElementById('modal-confirm').classList.remove('open')">✕</button>
+        </div>
+        <div class="modal-body">
+            <p style="color:var(--ink-2)">Delete employee <strong id="confirm-id"></strong>? This cannot be undone.</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="document.getElementById('modal-confirm').classList.remove('open')">Cancel</button>
+            <button class="btn btn-danger" id="confirm-delete">Delete</button>
+        </div>
+    </div>
+</div>
+
+<div id="toast-container"></div>
+<script src="js/api.js"></script>
+<script src="js/nav.js"></script>
+<script>
+    const empId = new URLSearchParams(location.search).get('id');
+    let empData = null;
+
+    function yesNo(val) {
+      if (val === true  || val === 'true')  return '<span class="badge badge-green">Yes</span>';
+      if (val === false || val === 'false') return '<span class="badge badge-gray">No</span>';
+      return '—';
+    }
+
+    function burnoutBadge(label='') {
+      if (!label) return '—';
+      const l = label.toLowerCase();
+      if (l.includes('severe') || l.includes('high'))   return `<span class="badge badge-red">${label}</span>`;
+      if (l.includes('moderate') || l.includes('medium')) return `<span class="badge badge-orange">${label}</span>`;
+      return `<span class="badge badge-green">${label}</span>`;
+    }
+
+    function clinicalBadge(label='') {
+      if (!label) return '—';
+      const l = label.toLowerCase();
+      if (l.includes('severe')) return `<span class="badge badge-red">${label}</span>`;
+      if (l.includes('moderate')) return `<span class="badge badge-orange">${label}</span>`;
+      if (l.includes('mild'))     return `<span class="badge badge-blue">${label}</span>`;
+      return `<span class="badge badge-green">${label}</span>`;
+    }
+
+    function scoreBar(label, score, max=10) {
+      const pct = Math.min(100, (score / max) * 100);
+      const color = pct > 70 ? 'red' : pct > 40 ? 'orange' : 'green';
+      return `
+        <div class="score-bar-wrap">
+          <div class="score-bar-label"><span>${label}</span><span style="font-weight:500">${score} / ${max}</span></div>
+          <div class="score-bar-track"><div class="score-bar-fill ${color}" style="width:${pct}%"></div></div>
+        </div>`;
+    }
+
+    function renderDetail(e) {
+      const wc  = e.workConditions    || {};
+      const lm  = e.lifestyleMetrics  || {};
+      const mhs = e.mentalHealthScores|| {};
+      const cs  = e.clinicalScores    || {};
+      const ti  = e.therapyInfo       || {};
+      const ai  = e.aiToolUsage       || {};
+      const eo  = e.employeeOutcomes  || {};
+
+      document.getElementById('topbar-title').textContent = `Employee #${e.employeeId}`;
+      document.getElementById('confirm-id').textContent   = `#${e.employeeId}`;
+
+      document.getElementById('detail-page').innerHTML = `
+
+        <!-- Header strip -->
+        <div class="card mb-6" style="display:flex;align-items:center;gap:24px;padding:22px 26px">
+          <div style="width:56px;height:56px;border-radius:50%;background:var(--accent-light);
+                      display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0">
+            ${e.gender === 'Female' ? '👩' : e.gender === 'Male' ? '👨' : '🧑'}‍💻
+          </div>
+          <div style="flex:1">
+            <div style="font-family:'DM Serif Display',serif;font-size:1.3rem">Employee #${e.employeeId}</div>
+            <div style="color:var(--ink-3);font-size:.85rem;margin-top:3px">
+              ${e.jobRole?.roleName ?? '—'} · ${e.seniorityLevel?.levelName ?? '—'} · ${e.industry?.industryName ?? '—'}
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            ${burnoutBadge(mhs.burnoutCategory?.categoryLabel)}
+            ${clinicalBadge(cs.phq9Category?.categoryLabel)}
+          </div>
+        </div>
+
+        <div class="grid-2 mb-5">
+
+          <!-- Left column -->
+          <div style="display:flex;flex-direction:column;gap:20px">
+
+            <!-- Demographics -->
+            <div class="card">
+              <div class="detail-section-title">Demographics &amp; Employment</div>
+              <div class="detail-grid">
+                <div class="detail-item"><span class="key">Age</span><span class="val">${e.age}</span></div>
+                <div class="detail-item"><span class="key">Gender</span><span class="val">${e.gender}</span></div>
+                <div class="detail-item"><span class="key">Country</span><span class="val">${e.country?.countryName ?? '—'}</span></div>
+                <div class="detail-item"><span class="key">Industry</span><span class="val">${e.industry?.industryName ?? '—'}</span></div>
+                <div class="detail-item"><span class="key">Job Role</span><span class="val">${e.jobRole?.roleName ?? '—'}</span></div>
+                <div class="detail-item"><span class="key">Seniority</span><span class="val">${e.seniorityLevel?.levelName ?? '—'}</span></div>
+                <div class="detail-item"><span class="key">Company Size</span><span class="val">${e.companySize?.sizeLabel ?? '—'}</span></div>
+                <div class="detail-item"><span class="key">Work Mode</span><span class="val">${e.workMode?.modeName ?? '—'}</span></div>
+                <div class="detail-item"><span class="key">Years Experience</span><span class="val">${e.yearsExperience}</span></div>
+                <div class="detail-item"><span class="key">Years at Company</span><span class="val">${e.yearsAtCompany}</span></div>
+                <div class="detail-item"><span class="key">Salary (USD)</span><span class="val">$${Number(e.salaryUsd).toLocaleString()}</span></div>
+              </div>
+            </div>
+
+            <!-- Work conditions -->
+            <div class="card">
+              <div class="detail-section-title">Work Conditions</div>
+              <div class="detail-grid" style="margin-bottom:16px">
+                <div class="detail-item"><span class="key">Work Hrs / Week</span><span class="val">${wc.workHoursPerWeek ?? '—'}</span></div>
+                <div class="detail-item"><span class="key">Meetings / Day</span><span class="val">${wc.meetingsPerDay ?? '—'}</span></div>
+                <div class="detail-item"><span class="key">Team Size</span><span class="val">${wc.teamSize ?? '—'}</span></div>
+              </div>
+              ${scoreBar('Deadline Pressure', wc.deadlinePressureScore ?? 0)}
+              ${scoreBar('Autonomy',          wc.autonomyScore         ?? 0)}
+              ${scoreBar('Manager Support',   wc.managerSupportScore   ?? 0)}
+            </div>
+
+            <!-- Lifestyle -->
+            <div class="card">
+              <div class="detail-section-title">Lifestyle Metrics</div>
+              <div class="detail-grid" style="margin-bottom:16px">
+                <div class="detail-item"><span class="key">Sleep Hrs / Night</span><span class="val">${lm.sleepHoursPerNight ?? '—'}</span></div>
+                <div class="detail-item"><span class="key">Exercise Days / Week</span><span class="val">${lm.exerciseDaysPerWeek ?? '—'}</span></div>
+                <div class="detail-item"><span class="key">Vacation Days Taken</span><span class="val">${lm.vacationDaysTaken ?? '—'}</span></div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Right column -->
+          <div style="display:flex;flex-direction:column;gap:20px">
+
+            <!-- Mental Health Scores -->
+            <div class="card">
+              <div class="detail-section-title">Mental Health Scores</div>
+              <div style="margin-bottom:12px">
+                ${scoreBar('Burnout',          mhs.burnoutScore           ?? 0)}
+                ${scoreBar('Stress',           mhs.stressScore            ?? 0)}
+                ${scoreBar('Work-Life Balance',mhs.workLifeBalanceScore   ?? 0)}
+                ${scoreBar('Job Satisfaction', mhs.jobSatisfactionScore   ?? 0)}
+                ${scoreBar('Social Support',   mhs.socialSupportScore     ?? 0)}
+              </div>
+              <div class="flex gap-2" style="flex-wrap:wrap">
+                <span class="text-xs text-muted">Burnout Category:</span>
+                ${burnoutBadge(mhs.burnoutCategory?.categoryLabel)}
+              </div>
+            </div>
+
+            <!-- Clinical scores -->
+            <div class="card">
+              <div class="detail-section-title">Clinical Assessments</div>
+              ${scoreBar('PHQ-9 (Depression)', cs.phq9Score ?? 0, 27)}
+              <div class="flex gap-2 items-center mb-4">
+                <span class="text-xs text-muted">Category:</span>
+                ${clinicalBadge(cs.phq9Category?.categoryLabel)}
+              </div>
+              ${scoreBar('GAD-7 (Anxiety)', cs.gad7Score ?? 0, 21)}
+              <div class="flex gap-2 items-center">
+                <span class="text-xs text-muted">Category:</span>
+                ${clinicalBadge(cs.gad7Category?.categoryLabel)}
+              </div>
+            </div>
+
+            <!-- Therapy / AI / Outcomes -->
+            <div class="card">
+              <div class="detail-section-title">Therapy, AI &amp; Outcomes</div>
+              <div class="detail-grid">
+                <div class="detail-item"><span class="key">Therapy Access</span><span class="val">${yesNo(ti.therapyAccess)}</span></div>
+                <div class="detail-item"><span class="key">Uses Therapy</span><span class="val">${yesNo(ti.usesTherapy)}</span></div>
+                <div class="detail-item"><span class="key">AI Tools Daily</span><span class="val">${yesNo(ai.aiToolsDaily)}</span></div>
+                <div class="detail-item"><span class="key">Seeks MH Support</span><span class="val">${yesNo(eo.seeksMentalHealthSupport)}</span></div>
+                <div class="detail-item"><span class="key">Job Change Intention</span><span class="val">${yesNo(eo.jobChangeIntention)}</span></div>
+              </div>
+
+              ${(ti.therapyAccess && !ti.usesTherapy) ? `
+              <div style="margin-top:14px;padding:10px 14px;background:var(--warn-light);
+                          border:1px solid var(--warn);border-radius:var(--r);font-size:.8rem;color:var(--warn)">
+                ⚠️ This employee has therapy access but is not currently using it.
+              </div>` : ''}
+            </div>
+
+          </div>
+        </div>`;
+    }
+
+    async function load() {
+      if (!empId) { location.href = 'employees.html'; return; }
+      try {
+        empData = await API.employees.get(empId);
+        renderDetail(empData);
+      } catch(err) {
+        document.getElementById('detail-page').innerHTML =
+          `<div class="empty-state"><div class="icon">❌</div>Could not load employee #${empId}.</div>`;
+        toast(err.message, 'error');
+      }
+    }
+
+    document.getElementById('btn-edit').addEventListener('click', () => {
+      location.href = `employees.html?edit=${empId}`;
+    });
+
+    document.getElementById('btn-delete').addEventListener('click', () => {
+      document.getElementById('modal-confirm').classList.add('open');
+    });
+
+    document.getElementById('confirm-delete').addEventListener('click', async () => {
+      try {
+        await API.employees.delete(+empId);
+        toast('Employee deleted');
+        setTimeout(() => location.href = 'employees.html', 800);
+      } catch(err) {
+        toast('Delete failed: ' + err.message, 'error');
+      }
+    });
+
+    document.addEventListener('DOMContentLoaded', load);
+</script>
+</body>
+</html>

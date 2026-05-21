@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <title>Clinical Assessments — MindMetrics</title>
+    <link rel="stylesheet" href="css/style.css"/>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<div class="main">
+    <header class="topbar">
+        <span class="topbar-title">Clinical Assessments</span>
+        <span class="topbar-sub">PHQ-9 depression &amp; GAD-7 anxiety distributions across the workforce</span>
+    </header>
+
+    <div class="page">
+
+        <!-- Summary stat cards -->
+        <div class="stats-row" id="summary-cards">
+            <div class="stat-card anim-fade-up anim-delay-1">
+                <div class="stat-label">Avg PHQ-9 Score</div>
+                <div class="stat-value skeleton" style="height:2rem;width:60px"> </div>
+                <div class="stat-sub">Depression (0–27)</div>
+            </div>
+            <div class="stat-card warn anim-fade-up anim-delay-2">
+                <div class="stat-label">Avg GAD-7 Score</div>
+                <div class="stat-value skeleton" style="height:2rem;width:60px"> </div>
+                <div class="stat-sub">Anxiety (0–21)</div>
+            </div>
+            <div class="stat-card danger anim-fade-up anim-delay-3">
+                <div class="stat-label">High-Risk Depression</div>
+                <div class="stat-value skeleton" style="height:2rem;width:60px"> </div>
+                <div class="stat-sub">Mod. Severe or Severe PHQ-9</div>
+            </div>
+            <div class="stat-card info anim-fade-up anim-delay-4">
+                <div class="stat-label">Severe Anxiety</div>
+                <div class="stat-value skeleton" style="height:2rem;width:60px"> </div>
+                <div class="stat-sub">Severe GAD-7 category</div>
+            </div>
+            <div class="stat-card danger anim-fade-up anim-delay-5">
+                <div class="stat-label">High-Risk, No Therapy</div>
+                <div class="stat-value skeleton" style="height:2rem;width:60px"> </div>
+                <div class="stat-sub">No therapy access</div>
+            </div>
+        </div>
+
+        <!-- Charts row -->
+        <div class="grid-2 mb-5 anim-fade-up anim-delay-2">
+
+            <!-- PHQ-9 distribution -->
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <div class="card-title">PHQ-9 Depression Distribution</div>
+                        <div class="card-sub text-muted">Employees per severity category</div>
+                    </div>
+                    <span class="badge badge-orange">Depression</span>
+                </div>
+                <div class="chart-wrap" style="height:260px"><canvas id="chart-phq9"></canvas></div>
+                <div class="chart-legend" id="phq9-legend" style="margin-top:14px"></div>
+            </div>
+
+            <!-- GAD-7 distribution -->
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <div class="card-title">GAD-7 Anxiety Distribution</div>
+                        <div class="card-sub text-muted">Employees per severity category</div>
+                    </div>
+                    <span class="badge badge-blue">Anxiety</span>
+                </div>
+                <div class="chart-wrap" style="height:260px"><canvas id="chart-gad7"></canvas></div>
+                <div class="chart-legend" id="gad7-legend" style="margin-top:14px"></div>
+            </div>
+        </div>
+
+        <!-- Therapy gap callout + score gauges -->
+        <div class="grid-2 mb-5 anim-fade-up anim-delay-3" id="insight-row" style="display:none">
+            <div class="therapy-gap-card">
+                <div class="therapy-gap-icon">⚠️</div>
+                <div>
+                    <div class="therapy-gap-count" id="gap-count">—</div>
+                    <div class="therapy-gap-desc">high-risk employees have <strong>no access to therapy</strong>. These individuals score in Moderately Severe or Severe PHQ-9, or Severe GAD-7 ranges, yet have no therapy access flagged in their record.</div>
+                </div>
+            </div>
+
+            <div class="card" style="display:grid;grid-template-columns:1fr 1fr;gap:0;padding:0;overflow:hidden">
+                <div class="score-gauge" style="border-right:1px solid var(--border)">
+                    <div class="gauge-label">Avg PHQ-9</div>
+                    <div class="gauge-value" id="gauge-phq9-val">—</div>
+                    <div class="gauge-max">out of 27</div>
+                    <div class="gauge-track" style="margin-top:12px">
+                        <div class="gauge-fill" id="gauge-phq9-fill" style="background:linear-gradient(90deg,var(--warn),var(--warn-mid))"></div>
+                    </div>
+                </div>
+                <div class="score-gauge">
+                    <div class="gauge-label">Avg GAD-7</div>
+                    <div class="gauge-value" id="gauge-gad7-val">—</div>
+                    <div class="gauge-max">out of 21</div>
+                    <div class="gauge-track" style="margin-top:12px">
+                        <div class="gauge-fill" id="gauge-gad7-fill" style="background:linear-gradient(90deg,var(--info),#4575C0)"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- High-risk employees table -->
+        <div class="card anim-fade-up anim-delay-4">
+            <div class="card-header">
+                <div>
+                    <div class="card-title">High-Risk Employees</div>
+                    <div class="card-sub text-muted">Moderately Severe / Severe PHQ-9, or Severe GAD-7 — sorted by highest scores</div>
+                </div>
+                <span class="badge badge-red" id="risk-total-badge">Loading…</span>
+            </div>
+
+            <div class="table-wrap" id="risk-table-wrap">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Age / Gender</th>
+                        <th>Role</th>
+                        <th>Industry</th>
+                        <th>PHQ-9</th>
+                        <th>PHQ-9 Category</th>
+                        <th>GAD-7</th>
+                        <th>GAD-7 Category</th>
+                        <th>Burnout</th>
+                        <th>Therapy Access</th>
+                        <th>Uses Therapy</th>
+                    </tr>
+                    </thead>
+                    <tbody id="risk-tbody">
+                    <tr class="no-click"><td colspan="11" style="text-align:center;color:var(--ink-4);padding:32px">Loading…</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="pagination" id="risk-pagination">
+                <span id="pag-info" style="color:var(--ink-3);font-size:.8rem"></span>
+                <div class="pagination-btns" id="pag-btns"></div>
+            </div>
+        </div>
+
+    </div><!-- /page -->
+</div><!-- /main -->
+
+<div id="toast-container"></div>
+<script src="js/api.js"></script>
+<script src="js/nav.js"></script>
+<script>
+    /* ── Chart defaults ───────────────────────────────────── */
+    Chart.defaults.font.family = "'DM Sans', sans-serif";
+    Chart.defaults.color = '#78726A';
+
+    const TOOLTIP_STYLE = {
+      backgroundColor: 'rgba(27,25,22,.92)',
+      titleColor: '#F6F3EE',
+      bodyColor:  '#C4BDB0',
+      padding: 10,
+      cornerRadius: 8,
+      titleFont: { family: "'DM Serif Display', serif", size: 13 },
+      bodyFont:  { family: "'DM Sans', sans-serif", size: 12 },
+    };
+
+    // PHQ-9 colours: mild → severe
+    const PHQ_COLORS  = ['#3D9070','#A8C86A','#E07040','#C05A1F','#9E2424'];
+    // GAD-7 colours
+    const GAD_COLORS  = ['#3D9070','#4575C0','#C05A1F','#9E2424'];
+
+    let charts = {};
+    let riskPage = 0;
+    const PAGE_SIZE = 20;
+
+    function destroyChart(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
+
+    /* ── Clinical badge helpers ───────────────────────────── */
+    function phq9Badge(label) {
+      if (!label) return '—';
+      const l = label.toLowerCase();
+      if (l.includes('severe (20')) return `<span class="badge badge-red">${label}</span>`;
+      if (l.includes('moderately severe')) return `<span class="badge badge-orange">${label}</span>`;
+      if (l.includes('moderate'))   return `<span class="badge badge-blue">${label}</span>`;
+      if (l.includes('mild'))       return `<span class="badge badge-teal">${label}</span>`;
+      return `<span class="badge badge-green">${label}</span>`;
+    }
+
+    function gad7Badge(label) {
+      if (!label) return '—';
+      const l = label.toLowerCase();
+      if (l.includes('severe'))   return `<span class="badge badge-red">${label}</span>`;
+      if (l.includes('moderate')) return `<span class="badge badge-orange">${label}</span>`;
+      if (l.includes('mild'))     return `<span class="badge badge-blue">${label}</span>`;
+      return `<span class="badge badge-green">${label}</span>`;
+    }
+
+    function burnoutBadge(label) {
+      if (!label) return '—';
+      const l = label.toLowerCase();
+      if (l.includes('severe') || l.includes('high'))   return `<span class="badge badge-red">${label}</span>`;
+      if (l.includes('moderate') || l.includes('medium')) return `<span class="badge badge-orange">${label}</span>`;
+      return `<span class="badge badge-green">${label}</span>`;
+    }
+
+    function yesNo(val) {
+      if (val === true  || val === 'true')  return '<span class="badge badge-green">Yes</span>';
+      if (val === false || val === 'false') return '<span class="badge badge-gray">No</span>';
+      return '—';
+    }
+
+    /* ── Summary cards ────────────────────────────────────── */
+    function renderSummary(s) {
+      document.getElementById('summary-cards').innerHTML = `
+        <div class="stat-card">
+          <div class="stat-label">Avg PHQ-9 Score</div>
+          <div class="stat-value counting">${s.avg_phq9}</div>
+          <div class="stat-sub">Depression (0–27)</div>
+        </div>
+        <div class="stat-card warn">
+          <div class="stat-label">Avg GAD-7 Score</div>
+          <div class="stat-value counting">${s.avg_gad7}</div>
+          <div class="stat-sub">Anxiety (0–21)</div>
+        </div>
+        <div class="stat-card danger">
+          <div class="stat-label">High-Risk Depression</div>
+          <div class="stat-value counting">${Number(s.high_risk_depression).toLocaleString()}</div>
+          <div class="stat-sub">Mod. Severe or Severe PHQ-9</div>
+        </div>
+        <div class="stat-card info">
+          <div class="stat-label">Severe Anxiety</div>
+          <div class="stat-value counting">${Number(s.severe_anxiety).toLocaleString()}</div>
+          <div class="stat-sub">Severe GAD-7 category</div>
+        </div>
+        <div class="stat-card danger">
+          <div class="stat-label">High-Risk, No Therapy</div>
+          <div class="stat-value counting">${Number(s.high_risk_no_therapy).toLocaleString()}</div>
+          <div class="stat-sub">No therapy access</div>
+        </div>`;
+
+      // Insight row
+      document.getElementById('gap-count').textContent    = Number(s.high_risk_no_therapy).toLocaleString();
+      document.getElementById('gauge-phq9-val').textContent = s.avg_phq9;
+      document.getElementById('gauge-gad7-val').textContent = s.avg_gad7;
+      document.getElementById('gauge-phq9-fill').style.width = (parseFloat(s.avg_phq9) / 27 * 100) + '%';
+      document.getElementById('gauge-gad7-fill').style.width = (parseFloat(s.avg_gad7) / 21 * 100) + '%';
+      document.getElementById('insight-row').style.display = '';
+    }
+
+    /* ── PHQ-9 chart ──────────────────────────────────────── */
+    function renderPHQ9(data) {
+      destroyChart('phq9');
+      charts['phq9'] = new Chart(document.getElementById('chart-phq9'), {
+        type: 'bar',
+        data: {
+          labels: data.map(r => r.category_label),
+          datasets: [{
+            label: 'Employees',
+            data:  data.map(r => r.employee_count),
+            backgroundColor: PHQ_COLORS.slice(0, data.length),
+            borderRadius: { topLeft: 6, topRight: 6 },
+            borderSkipped: 'bottom',
+            maxBarThickness: 80,
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          animation: { duration: 800, easing: 'easeOutQuart' },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              ...TOOLTIP_STYLE,
+              callbacks: {
+                title: ctx => ctx[0].label,
+                label: ctx => ` ${ctx.parsed.y.toLocaleString()} employees  (${data[ctx.dataIndex].percentage}%)`,
+              }
+            }
+          },
+          scales: {
+            y: {
+              grid: { color: 'rgba(224,218,208,.35)', drawBorder: false },
+              ticks: { font: { size: 11 } },
+            },
+            x: {
+              grid: { display: false },
+              ticks: { font: { size: 10 }, maxRotation: 15 },
+            }
+          }
+        }
+      });
+
+      document.getElementById('phq9-legend').innerHTML = data.map((r, i) => `
+        <div class="chart-legend-item">
+          <span class="chart-legend-dot" style="background:${PHQ_COLORS[i] || '#aaa'}"></span>
+          <span class="chart-legend-label">${r.category_label}</span>
+          <span class="chart-legend-pct">${r.percentage}%</span>
+          <div class="chart-legend-bar">
+            <div class="chart-legend-fill" style="width:${r.percentage}%;background:${PHQ_COLORS[i] || '#aaa'}"></div>
+          </div>
+        </div>`).join('');
+    }
+
+    /* ── GAD-7 chart ──────────────────────────────────────── */
+    function renderGAD7(data) {
+      destroyChart('gad7');
+      charts['gad7'] = new Chart(document.getElementById('chart-gad7'), {
+        type: 'bar',
+        data: {
+          labels: data.map(r => r.category_label),
+          datasets: [{
+            label: 'Employees',
+            data:  data.map(r => r.employee_count),
+            backgroundColor: GAD_COLORS.slice(0, data.length),
+            borderRadius: { topLeft: 6, topRight: 6 },
+            borderSkipped: 'bottom',
+            maxBarThickness: 80,
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          animation: { duration: 900, easing: 'easeOutQuart' },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              ...TOOLTIP_STYLE,
+              callbacks: {
+                title: ctx => ctx[0].label,
+                label: ctx => ` ${ctx.parsed.y.toLocaleString()} employees  (${data[ctx.dataIndex].percentage}%)`,
+              }
+            }
+          },
+          scales: {
+            y: {
+              grid: { color: 'rgba(224,218,208,.35)', drawBorder: false },
+              ticks: { font: { size: 11 } },
+            },
+            x: {
+              grid: { display: false },
+              ticks: { font: { size: 10 }, maxRotation: 15 },
+            }
+          }
+        }
+      });
+
+      document.getElementById('gad7-legend').innerHTML = data.map((r, i) => `
+        <div class="chart-legend-item">
+          <span class="chart-legend-dot" style="background:${GAD_COLORS[i] || '#aaa'}"></span>
+          <span class="chart-legend-label">${r.category_label}</span>
+          <span class="chart-legend-pct">${r.percentage}%</span>
+          <div class="chart-legend-bar">
+            <div class="chart-legend-fill" style="width:${r.percentage}%;background:${GAD_COLORS[i] || '#aaa'}"></div>
+          </div>
+        </div>`).join('');
+    }
+
+    /* ── High-risk table ──────────────────────────────────── */
+    async function loadRiskTable(page = 0) {
+      riskPage = page;
+      const tbody = document.getElementById('risk-tbody');
+      tbody.innerHTML = `<tr class="no-click"><td colspan="11" style="text-align:center;color:var(--ink-4);padding:32px">
+        <div class="skeleton" style="height:14px;width:180px;margin:0 auto"></div></td></tr>`;
+
+      try {
+        const res = await API.analytics.highRiskEmployees(page, PAGE_SIZE);
+        const rows = res.content || [];
+        const total = res.totalElements || 0;
+        const totalPages = res.totalPages || 0;
+
+        document.getElementById('risk-total-badge').textContent = `${total.toLocaleString()} employees`;
+
+        if (rows.length === 0) {
+          tbody.innerHTML = `<tr class="no-click"><td colspan="11" class="empty-state" style="padding:40px">
+            No high-risk employees found.</td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = rows.map(r => {
+          const noTherapy = r.therapy_access === false;
+          const rowClass  = noTherapy ? 'style="background:rgba(158,36,36,.03)"' : '';
+          return `
+          <tr class="no-click" ${rowClass} onclick="location.href='employee-detail.html?id=${r.employee_id}'" style="cursor:pointer">
+            <td><a href="employee-detail.html?id=${r.employee_id}" style="color:var(--accent);font-weight:500">#${r.employee_id}</a></td>
+            <td>${r.age} / ${r.gender}</td>
+            <td style="max-width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${r.job_role || '—'}</td>
+            <td style="max-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${r.industry_name || '—'}</td>
+            <td class="num"><strong>${r.phq9_score}</strong><span style="color:var(--ink-4);font-size:.7rem">/27</span></td>
+            <td>${phq9Badge(r.phq9_category)}</td>
+            <td class="num"><strong>${r.gad7_score}</strong><span style="color:var(--ink-4);font-size:.7rem">/21</span></td>
+            <td>${gad7Badge(r.gad7_category)}</td>
+            <td>${burnoutBadge(r.burnout_category)}</td>
+            <td>${yesNo(r.therapy_access)}${noTherapy ? ' <span title="No therapy access" style="color:var(--danger);font-size:.75rem">⚠</span>' : ''}</td>
+            <td>${yesNo(r.uses_therapy)}</td>
+          </tr>`;
+        }).join('');
+
+        renderPagination(page, totalPages, total);
+      } catch(err) {
+        tbody.innerHTML = `<tr class="no-click"><td colspan="11" style="text-align:center;color:var(--danger);padding:32px">
+          Failed to load: ${err.message}</td></tr>`;
+        toast('Failed to load high-risk employees: ' + err.message, 'error');
+      }
+    }
+
+    function renderPagination(page, totalPages, total) {
+      const start = page * PAGE_SIZE + 1;
+      const end   = Math.min((page + 1) * PAGE_SIZE, total);
+      document.getElementById('pag-info').textContent = `Showing ${start}–${end} of ${total.toLocaleString()}`;
+
+      const btns = document.getElementById('pag-btns');
+      const pages = [];
+      pages.push({ label: '‹', page: page - 1, disabled: page === 0 });
+      for (let i = 0; i < totalPages; i++) {
+        if (i === 0 || i === totalPages - 1 || Math.abs(i - page) <= 1) {
+          pages.push({ label: i + 1, page: i, active: i === page });
+        } else if (pages[pages.length - 1]?.label !== '…') {
+          pages.push({ label: '…', page: -1, disabled: true });
+        }
+      }
+      pages.push({ label: '›', page: page + 1, disabled: page >= totalPages - 1 });
+
+      btns.innerHTML = pages.map(p =>
+        `<button class="pag-btn${p.active ? ' active' : ''}" ${p.disabled ? 'disabled' : ''} data-p="${p.page}">${p.label}</button>`
+      ).join('');
+
+      btns.querySelectorAll('[data-p]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const target = parseInt(btn.dataset.p);
+          if (target >= 0) loadRiskTable(target);
+        });
+      });
+    }
+
+    /* ── Init ─────────────────────────────────────────────── */
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        const [summary, phq9, gad7] = await Promise.all([
+          API.analytics.clinicalSummary(),
+          API.analytics.phq9Distribution(),
+          API.analytics.gad7Distribution(),
+        ]);
+        renderSummary(summary);
+        renderPHQ9(phq9);
+        renderGAD7(gad7);
+      } catch(err) {
+        toast('Failed to load clinical data: ' + err.message, 'error');
+      }
+
+      loadRiskTable(0);
+    });
+</script>
+</body>
+</html>
