@@ -11,6 +11,8 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/employees")
 @CrossOrigin(origins = "*")
@@ -19,9 +21,15 @@ public class EmployeeController {
 
     private final EmployeeService service;
 
+
+    @GetMapping("/next-id")
+    public Map<String, Integer> getNextId() {
+        return Map.of("nextId", service.getNextEmployeeId());
+    }
+
     // GET /api/employees?page=0&size=20
     @GetMapping
-    public Page<Employee> getAll(@PageableDefault(size = 20) Pageable pageable) {
+    public Page<Employee> getAll(@PageableDefault(size = 20, sort = "employeeId") Pageable pageable) {
         return service.getAll(pageable);
     }
 
@@ -33,7 +41,7 @@ public class EmployeeController {
             @RequestParam(required = false) Integer industryId,
             @RequestParam(required = false) Integer workModeId,
             @RequestParam(required = false) String gender,
-            @PageableDefault(size = 20) Pageable pageable) {
+            @PageableDefault(size = 20, sort = "employeeId") Pageable pageable) {
         return service.search(countryId, jobRoleId, industryId, workModeId, gender, pageable);
     }
 

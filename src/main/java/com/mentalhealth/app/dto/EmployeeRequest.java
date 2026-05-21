@@ -12,7 +12,6 @@ import java.math.BigDecimal;
 @Setter
 public class EmployeeRequest {
 
-    @NotNull
     private Integer employeeId;
 
     @NotNull @Min(18) @Max(80)

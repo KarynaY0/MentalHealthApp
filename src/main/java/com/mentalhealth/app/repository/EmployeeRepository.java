@@ -50,4 +50,7 @@ public interface EmployeeRepository extends JpaRepository<Employee, Integer> {
             Pageable pageable
     );
 
+    @Query("SELECT MAX(e.employeeId) FROM Employee e")
+    Integer findMaxEmployeeId();
+
 }

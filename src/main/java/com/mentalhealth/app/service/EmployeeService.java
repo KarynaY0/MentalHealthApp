@@ -47,7 +47,8 @@ public class EmployeeService {
     @Transactional
     public Employee create(EmployeeRequest req) {
         Employee emp = buildEmployee(new Employee(), req);
-        emp.setEmployeeId(req.getEmployeeId());
+        Integer id = req.getEmployeeId() != null ? req.getEmployeeId() : getNextEmployeeId();
+        emp.setEmployeeId(id);
         return employeeRepo.save(emp);
     }
 
@@ -156,4 +157,10 @@ public class EmployeeService {
 
         return emp;
     }
+
+    public Integer getNextEmployeeId() {
+        Integer maxId = employeeRepo.findMaxEmployeeId();
+        return (maxId != null ? maxId : 0) + 1;
+    }
+
 }
